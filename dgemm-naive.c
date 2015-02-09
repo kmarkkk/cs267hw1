@@ -7,14 +7,18 @@ const char* dgemm_desc = "Naive, three-loop dgemm.";
 void square_dgemm (int n, double* A, double* B, double* C)
 {
   /* For each row i of A */
-  for (int i = 0; i < n; ++i)
+  for (int j = 0; j < n; ++j)
     /* For each column j of B */
-    for (int j = 0; j < n; ++j) 
+    for (int k = 0; k < n; ++k) 
     {
       /* Compute C(i,j) */
-      double cij = C[i+j*n];
-      for( int k = 0; k < n; k++ )
-	cij += A[i+k*n] * B[k+j*n];
-      C[i+j*n] = cij;
+      //double cij = C[i+j*n];
+      int aindex = k*n;
+      int cindex = j*n;
+      int bindex = k+cindex;
+      for(int i = 0; i < n; ++i)
+	//cij += A[i+k*n] * B[k+j*n];
+	C[i+cindex] += A[i+aindex] * B[bindex];
+      //C[i+j*n] = cij;
     }
 }
