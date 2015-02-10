@@ -7,10 +7,19 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 #endif
 
 #define min(a,b) (((a)<(b))?(a):(b))
+#define DOUBLE_SIZE sizeof(double)
+#define P_SIZE 10
+#define PT 0
 
 static void
 pr(double *arr, int len)
 {
+  if (!PT) {
+    return;
+  }
+  if (P_SIZE != -1) {
+    len = P_SIZE;
+  }
   for (int t = 0; t < len; t++) {
     printf("%.2f ", arr[t]);
   }
@@ -38,13 +47,18 @@ static void do_block (int lda, int M, int N, int K, double* A, double* B, double
 static void
 do_bk(int lda, int M, int N, int K, double* A, double* B, double* restrict C)
 {
+  /*
+  pr(A, 30);
+  pr(B, 30);
+  pr(C, 10);
+  */
   for (int row = 0; row < M; ++row) {
     for (int col = 0; col < N; ++col) {
-      double cij = C[row * M + col];
+      double cij = C[row + M * col];
       for (int k = 0; k < K; ++k) {
         cij += A[k * M + row] * B[col * K + k];
       }
-      C[row * M + col] = cij;
+      C[row + M * col] = cij;
     }
   }
 }
@@ -55,6 +69,13 @@ do_bk(int lda, int M, int N, int K, double* A, double* B, double* restrict C)
  * On exit, A and B maintain their input values. */  
 void square_dgemm (int lda, double* A, double* B, double* restrict C)
 {
+  /*
+  printf("Called\n");
+  pr(A, 30);
+  pr(B, 30);
+  pr(C, 10);
+  printf("-----\n");
+  */
   /*
   for (int i = 0; i < lda; ++i)
     for (int j = 0; j < lda; ++j) 
@@ -77,38 +98,44 @@ void square_dgemm (int lda, double* A, double* B, double* restrict C)
   /* For each block-row of A */ 
   for (int k = 0; k < lda; k += BLOCK_SIZE) {
     int K = min (BLOCK_SIZE, lda-k);
-    memcpy(a_l2, A + k * lda, K * lda);
+    memcpy(a_l2, A + k * lda, K * lda * DOUBLE_SIZE);
     for (int t = 0; t < lda; t++) {
-      memcpy(b_l2 + t * K, B + k + t * lda, K);
+      memcpy(b_l2 + (t * K), B + (k + t * lda), 
+          K * DOUBLE_SIZE);
     }
 
     for (int i = 0; i < lda; i += BLOCK_SIZE) {
       int M = min (BLOCK_SIZE, lda-i);
       for (int col = 0; col < lda; col++) {
-        memcpy(c_l2 + col * M, C + i + col * lda, M);
+        memcpy(c_l2 + col * M, 
+            C + (i + col * lda), M * DOUBLE_SIZE);
       }
       for (int col = 0; col < K; col++) {
-        memcpy(a_l1 + col * M, a_l2 + col * lda + i, M);
+        memcpy(a_l1 + col * M, 
+            a_l2 + (col * lda + i), M * DOUBLE_SIZE);
       }
       
       /* For each block-column of B */
       for (int j = 0; j < lda; j += BLOCK_SIZE) {
         /* Accumulate block dgemms into block of C */
+  //      printf("Ah\n");
         int N = min (BLOCK_SIZE, lda-j);
-        memcpy(c_l1, c_l2 + j * M, M * N);
-        memcpy(a_l1, a_l1 + j * M, M * N);
+        memcpy(c_l1, c_l2 + j * M, M * N * DOUBLE_SIZE);
+        memcpy(b_l1, b_l2 + j * M, M * N * DOUBLE_SIZE);
         /* Correct block dimensions if block "goes off edge of" the matrix */
         /* Perform individual block dgemm */
         //do_block(lda, M, N, K, A + i + k*lda, B + k + j*lda, C + i + j*lda);
         do_bk(lda, M, N, K, a_l1, b_l1, c_l1);
-        memcpy(c_l2 + j * M, c_l1, M * N);
-        pr(c_l1, M * N);
+        memcpy(c_l2 + j * M, c_l1, M * N * DOUBLE_SIZE);
+        //pr(c_l1, M * N);
       }
       for (int col = 0; col < lda; col++) {
-        memcpy(C + i + col * lda, c_l2 + col * M, M);
+        memcpy(C + (i + col * lda), 
+            c_l2 + col * M, M * DOUBLE_SIZE);
       }
     }
   }
+//  printf("Done\n\n");
 }
 
 
