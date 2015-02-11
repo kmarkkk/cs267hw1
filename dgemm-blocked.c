@@ -1,7 +1,9 @@
+#include <emmintrin.h>
+
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #if !defined(BLOCK_SIZE)
-#define BLOCK_SIZE 41
+#define BLOCK_SIZE 192
 #endif
 
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -11,12 +13,9 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  * where C is M-by-N, A is M-by-K, and B is K-by-N. */
 static void do_block (int lda, int M, int N, int K, double* A, double* B, double* C)
 {
-  /* For each row i of A */
-  for (int j = 0; j < N; ++j)
-    /* For each column j of B */ 
+  /*for (int j = 0; j < N; ++j)
     for (int k = 0; k < K; ++k) 
     {
-      /* Compute C(i,j) */
       //double cij = C[i+j*lda];
       int aindex = k*lda;
       int cindex = j*lda;
@@ -25,7 +24,37 @@ static void do_block (int lda, int M, int N, int K, double* A, double* B, double
         C[i+cindex] += A[i+aindex] * B[bindex];
 	      //cij += A[i+k*lda] * B[k+j*lda];
       //C[i+j*lda] = cij;
+    }*/
+
+  int m = 0;
+  if (M%2 != 0)
+    m = M-1;
+  else
+    m = M;
+  //printf("n: %d; N: %d", n, N);
+  for (int j = 0; j < N; ++j) {
+    int cindex = j*lda;
+    for (int k = 0; k < K; ++k) {
+      //double cij = C[i+j*n];
+      int aindex = k*lda;
+      //int cindex = j*n;
+      int bindex = k+cindex;
+      __m128d bcol = _mm_load1_pd(B+bindex);
+      int i = 0;
+      for(; i < m; i = i+2) {
+         //cij += A[i+k*n] * B[k+j*n];
+         //C[i+cindex] += A[i+aindex] * B[bindex];
+        __m128d a = _mm_loadu_pd(A+i+aindex);
+        __m128d c = _mm_loadu_pd(C+i+cindex);
+        c = _mm_add_pd(c, _mm_mul_pd(a, bcol));
+        _mm_storeu_pd(C+i+cindex, c);
+      }
+      for (; i < M; ++i) {
+        C[i+cindex] += A[i+aindex] * B[bindex];
+      }
+      //C[i+j*n] = cij;
     }
+  }
 }
 
 /* This routine performs a dgemm operation
