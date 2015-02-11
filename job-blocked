@@ -5,4 +5,4 @@
 #PBS -A mp309
 
 cd $PBS_O_WORKDIR
-aprun -n 1 -N 1 ./benchmark-blocked
+aprun -n 1 -N 1 ./benchmark-blocked 98

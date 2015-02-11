@@ -2,9 +2,7 @@
 
 const char* dgemm_desc = "Simple blocked dgemm.";
 
-#if !defined(BLOCK_SIZE)
-#define BLOCK_SIZE 41
-#endif
+int BLOCK_SIZE = 41;
 
 #define min(a,b) (((a)<(b))?(a):(b))
 #define DOUBLE_SIZE sizeof(double)
@@ -51,14 +49,16 @@ do_bk(int lda, int M, int N, int K, double* A, double* B, double* restrict C)
   pr(A, 30);
   pr(B, 30);
   pr(C, 10);
-  */
-  for (int row = 0; row < M; ++row) {
+   */
+  for (int k = 0; k < K; ++k) {
     for (int col = 0; col < N; ++col) {
-      double cij = C[row + M * col];
-      for (int k = 0; k < K; ++k) {
-        cij += A[k * M + row] * B[col * K + k];
+      for (int row = 0; row < M; ++row) {
+        //double cij = C[row + M * col];
+        //cij += A[k * M + row] * B[col * K + k];
+        C[row + M * col] += A[k * M + row] * B[col * K + k];
+
       }
-      C[row + M * col] = cij;
+      //C[row + M * col] = cij;
     }
   }
 }
@@ -67,7 +67,7 @@ do_bk(int lda, int M, int N, int K, double* A, double* B, double* restrict C)
  *  C := C + A * B
  * where A, B, and C are lda-by-lda matrices stored in column-major format. 
  * On exit, A and B maintain their input values. */  
-void square_dgemm (int lda, double* A, double* B, double* restrict C)
+void square_dgemm (int lda, double* A, double* B, double* restrict C, int bs)
 {
   /*
   printf("Called\n");
@@ -77,15 +77,17 @@ void square_dgemm (int lda, double* A, double* B, double* restrict C)
   printf("-----\n");
   */
   /*
-  for (int i = 0; i < lda; ++i)
+      for( int k = 0; k < lda; k++ )
     for (int j = 0; j < lda; ++j) 
+  for (int i = 0; i < lda; ++i)
     {
       double cij = C[i+j*lda];
-      for( int k = 0; k < lda; k++ )
         cij += A[i+k*lda] * B[k+j*lda];
       C[i+j*lda] = cij;
     }
     */
+
+  BLOCK_SIZE = bs;
 
 
   int tripe_size = BLOCK_SIZE * lda;
@@ -110,6 +112,7 @@ void square_dgemm (int lda, double* A, double* B, double* restrict C)
         memcpy(c_l2 + col * M, 
             C + (i + col * lda), M * DOUBLE_SIZE);
       }
+
       for (int col = 0; col < K; col++) {
         memcpy(a_l1 + col * M, 
             a_l2 + (col * lda + i), M * DOUBLE_SIZE);
@@ -118,16 +121,14 @@ void square_dgemm (int lda, double* A, double* B, double* restrict C)
       /* For each block-column of B */
       for (int j = 0; j < lda; j += BLOCK_SIZE) {
         /* Accumulate block dgemms into block of C */
-  //      printf("Ah\n");
         int N = min (BLOCK_SIZE, lda-j);
         memcpy(c_l1, c_l2 + j * M, M * N * DOUBLE_SIZE);
-        memcpy(b_l1, b_l2 + j * M, M * N * DOUBLE_SIZE);
+        memcpy(b_l1, b_l2 + j * K, K * N * DOUBLE_SIZE);
         /* Correct block dimensions if block "goes off edge of" the matrix */
         /* Perform individual block dgemm */
         //do_block(lda, M, N, K, A + i + k*lda, B + k + j*lda, C + i + j*lda);
         do_bk(lda, M, N, K, a_l1, b_l1, c_l1);
         memcpy(c_l2 + j * M, c_l1, M * N * DOUBLE_SIZE);
-        //pr(c_l1, M * N);
       }
       for (int col = 0; col < lda; col++) {
         memcpy(C + (i + col * lda), 
@@ -135,7 +136,5 @@ void square_dgemm (int lda, double* A, double* B, double* restrict C)
       }
     }
   }
-//  printf("Done\n\n");
+
 }
-
-
