@@ -59,8 +59,8 @@ static void do_block (int lda, int M, int N, int K, double* A, double* B, double
   int M2, N4, K_unroll, aindex, bindex, bindex1, bindex2, bindex3, bindex4, 
   cindex, cindex1, cindex2, cindex3, cindex4, i, j, k;
   //__m128d a, b, b1, b2, b3, b4, c, c1, c2, c3, c4;
-  __m128d b, b1, b2, b3, b4;
-  register __m128d a, c, c1, c2, c3, c4;
+  //__m128d b, b1, b2, b3, b4;
+  register __m128d a, b, b1, b2, b3, b4, c, c1, c2, c3, c4;
 
   if (M%2 != 0)
     M2 = M-1;
