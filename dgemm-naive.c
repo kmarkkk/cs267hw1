@@ -14,8 +14,8 @@ void mm(int m, int n, int k, double *A, double *B, double *C, int);
 
 typedef union
 {
-  __m128d v;
-  double d[2];
+  __m128d vec;
+  double vals[2];
 } vector;
   
 
@@ -100,62 +100,70 @@ void mm(int m, int n, int k, double *restrict A,
       vector a_0_a_1, a_2_a_3;
       vector b_0, b_1, b_2, b_3;
 
-      c_00_c_10.v = _mm_setzero_pd();
-      c_01_c_11.v = _mm_setzero_pd();
-      c_02_c_12.v = _mm_setzero_pd();
-      c_03_c_13.v = _mm_setzero_pd();
-      c_20_c_30.v = _mm_setzero_pd();
-      c_21_c_31.v = _mm_setzero_pd();
-      c_22_c_32.v = _mm_setzero_pd();
-      c_23_c_33.v = _mm_setzero_pd();
+      c_00_c_10.vec = _mm_setzero_pd();
+      c_01_c_11.vec = _mm_setzero_pd();
+      c_02_c_12.vec = _mm_setzero_pd();
+      c_03_c_13.vec = _mm_setzero_pd();
+      c_20_c_30.vec = _mm_setzero_pd();
+      c_21_c_31.vec = _mm_setzero_pd();
+      c_22_c_32.vec = _mm_setzero_pd();
+      c_23_c_33.vec = _mm_setzero_pd();
       
       double *la = cA + i * k;
       double *lb = cB + j * k;
       for (int p = 0; p < k; ++p) {
-        a_0_a_1.v = _mm_load_pd(la);
-        a_2_a_3.v = _mm_load_pd(la + 2);
+        a_0_a_1.vec = _mm_load_pd(la);
+        a_2_a_3.vec = _mm_load_pd(la + 2);
 
-        b_0.v = _mm_load1_pd(lb);
-        b_1.v = _mm_load1_pd(lb + 1);
-        b_2.v = _mm_load1_pd(lb + 2);
-        b_3.v = _mm_load1_pd(lb + 3);
+        b_0.vec = _mm_load1_pd(lb);
+        b_1.vec = _mm_load1_pd(lb + 1);
+        b_2.vec = _mm_load1_pd(lb + 2);
+        b_3.vec = _mm_load1_pd(lb + 3);
 
         // Store and multiply is slow....
-        c_00_c_10.v = _mm_add_pd(c_00_c_10.v, a_0_a_1.v * b_0.v);
-        c_01_c_11.v = _mm_add_pd(c_01_c_11.v, a_0_a_1.v * b_1.v);
-        c_02_c_12.v = _mm_add_pd(c_02_c_12.v, a_0_a_1.v * b_2.v);
-        c_03_c_13.v = _mm_add_pd(c_03_c_13.v, a_0_a_1.v * b_3.v);
+        c_00_c_10.vec = _mm_add_pd(c_00_c_10.vec, 
+            a_0_a_1.vec * b_0.vec);
+        c_01_c_11.vec = _mm_add_pd(c_01_c_11.vec, 
+            a_0_a_1.vec * b_1.vec);
+        c_02_c_12.vec = _mm_add_pd(c_02_c_12.vec, 
+            a_0_a_1.vec * b_2.vec);
+        c_03_c_13.vec = _mm_add_pd(c_03_c_13.vec, 
+            a_0_a_1.vec * b_3.vec);
 
-        c_20_c_30.v = _mm_add_pd(c_20_c_30.v, a_2_a_3.v * b_0.v);
-        c_21_c_31.v = _mm_add_pd(c_21_c_31.v, a_2_a_3.v * b_1.v);
-        c_22_c_32.v = _mm_add_pd(c_22_c_32.v, a_2_a_3.v * b_2.v);
-        c_23_c_33.v = _mm_add_pd(c_23_c_33.v, a_2_a_3.v * b_3.v);
+        c_20_c_30.vec = _mm_add_pd(c_20_c_30.vec, 
+            a_2_a_3.vec * b_0.vec);
+        c_21_c_31.vec = _mm_add_pd(c_21_c_31.vec, 
+            a_2_a_3.vec * b_1.vec);
+        c_22_c_32.vec = _mm_add_pd(c_22_c_32.vec, 
+            a_2_a_3.vec * b_2.vec);
+        c_23_c_33.vec = _mm_add_pd(c_23_c_33.vec, 
+            a_2_a_3.vec * b_3.vec);
         la += 4;
         lb += 4;
       }
       double *cp = C + i + j * lda;
-      *cp += c_00_c_10.d[0];
-      *(cp + 1) += c_00_c_10.d[1];
-      *(cp + 2) += c_20_c_30.d[0];
-      *(cp + 3) += c_20_c_30.d[1];
+      *cp += c_00_c_10.vals[0];
+      *(cp + 1) += c_00_c_10.vals[1];
+      *(cp + 2) += c_20_c_30.vals[0];
+      *(cp + 3) += c_20_c_30.vals[1];
 
       cp += lda;
-      *cp += c_01_c_11.d[0];
-      *(cp + 1) += c_01_c_11.d[1];
-      *(cp + 2) += c_21_c_31.d[0];
-      *(cp + 3) += c_21_c_31.d[1];
+      *cp += c_01_c_11.vals[0];
+      *(cp + 1) += c_01_c_11.vals[1];
+      *(cp + 2) += c_21_c_31.vals[0];
+      *(cp + 3) += c_21_c_31.vals[1];
 
       cp += lda;
-      *cp += c_02_c_12.d[0];
-      *(cp + 1) += c_02_c_12.d[1];
-      *(cp + 2) += c_22_c_32.d[0];
-      *(cp + 3) += c_22_c_32.d[1];
+      *cp += c_02_c_12.vals[0];
+      *(cp + 1) += c_02_c_12.vals[1];
+      *(cp + 2) += c_22_c_32.vals[0];
+      *(cp + 3) += c_22_c_32.vals[1];
 
       cp += lda;
-      *cp += c_03_c_13.d[0];
-      *(cp + 1) += c_03_c_13.d[1];
-      *(cp + 2) += c_23_c_33.d[0];
-      *(cp + 3) += c_23_c_33.d[1];
+      *cp += c_03_c_13.vals[0];
+      *(cp + 1) += c_03_c_13.vals[1];
+      *(cp + 2) += c_23_c_33.vals[0];
+      *(cp + 3) += c_23_c_33.vals[1];
     }
   }
 }
