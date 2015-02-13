@@ -4,9 +4,8 @@
 
 const char* dgemm_desc = "Naive, three-loop dgemm.";
 /* k, j, i */
-#define BLOCK_SIZE1 2048
-#define BLOCK_SIZE2 1024
-#define BLOCK_SIZE3 1024
+#define BLOCK_SIZE1 512
+#define BLOCK_SIZE2 512
 #define PADDING_BASE 4
 #define DOUBLE_SIZE sizeof(double)
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -68,6 +67,7 @@ void square_dgemm (int lda, double* Ar, double* Br, double* restrict Cr)
             new_lda);
     }
   }
+  //mm(new_lda, new_lda, new_lda, A, B, C, new_lda);
 
   if (lda % PADDING_BASE != 0) {
     int new_lda = (lda / PADDING_BASE + 1) * PADDING_BASE;
