@@ -4,13 +4,11 @@
 
 const char* dgemm_desc = "Naive, three-loop dgemm.";
 /* k, j, i */
-#define BLOCK_SIZE1 512
-#define BLOCK_SIZE2 512
+#define BLOCK_SIZE1 256
+#define BLOCK_SIZE2 256
 #define PADDING_BASE 4
 #define DOUBLE_SIZE sizeof(double)
 #define min(a,b) (((a)<(b))?(a):(b))
-#define C_ROW 16
-#define C_COL 8
 
 void mm(int m, int n, int k, double *A, double *B, double *C, int);
 
@@ -20,20 +18,7 @@ typedef union
   double d[2];
 } vector;
   
-static void
-pr(double *arr, int R, int C, int rm)
-{
-  for (int row = 0; row < R; row++) {
-    for (int col = 0; col < C; col++) {
-      if (rm) {
-        printf("%.2f ", arr[row * C + col]);
-      } else {
-        printf("%.2f ", arr[col * R + row]);
-      }
-    }
-    printf("\n");
-  }
-}
+
 
 /* This routine performs a dgemm operation
  *  C := C + A * B
@@ -58,16 +43,17 @@ void square_dgemm (int lda, double* Ar, double* Br, double* restrict Cr)
       memcpy(B + t * new_lda, Br + t * lda, lda * DOUBLE_SIZE);
     }
   }
+
   for (int k = 0; k < new_lda; k += BLOCK_SIZE1) {
     int K = min (BLOCK_SIZE1, new_lda-k);
     for (int j = 0; j < new_lda; j += BLOCK_SIZE2) {
       int N = min (BLOCK_SIZE2, new_lda-j);
+        //printf("k %d j %d K %d N %d lda %d\n", k, j, K, N, new_lda);
 	      mm(new_lda, N, K, 
             A + k*new_lda, B + k + j*new_lda, C + j*new_lda, 
             new_lda);
     }
   }
-  //mm(new_lda, new_lda, new_lda, A, B, C, new_lda);
 
   if (lda % PADDING_BASE != 0) {
     int new_lda = (lda / PADDING_BASE + 1) * PADDING_BASE;
@@ -76,8 +62,6 @@ void square_dgemm (int lda, double* Ar, double* Br, double* restrict Cr)
     }
     free(A);
   }
-
-
 }
 
 void mm(int m, int n, int k, double *restrict A, 
@@ -150,28 +134,28 @@ void mm(int m, int n, int k, double *restrict A,
         lb += 4;
       }
       double *cp = C + i + j * lda;
-      *cp = c_00_c_10.d[0];
-      *(cp + 1) = c_00_c_10.d[1];
-      *(cp + 2) = c_20_c_30.d[0];
-      *(cp + 3) = c_20_c_30.d[1];
+      *cp += c_00_c_10.d[0];
+      *(cp + 1) += c_00_c_10.d[1];
+      *(cp + 2) += c_20_c_30.d[0];
+      *(cp + 3) += c_20_c_30.d[1];
 
       cp += lda;
-      *cp = c_01_c_11.d[0];
-      *(cp + 1) = c_01_c_11.d[1];
-      *(cp + 2) = c_21_c_31.d[0];
-      *(cp + 3) = c_21_c_31.d[1];
+      *cp += c_01_c_11.d[0];
+      *(cp + 1) += c_01_c_11.d[1];
+      *(cp + 2) += c_21_c_31.d[0];
+      *(cp + 3) += c_21_c_31.d[1];
 
       cp += lda;
-      *cp = c_02_c_12.d[0];
-      *(cp + 1) = c_02_c_12.d[1];
-      *(cp + 2) = c_22_c_32.d[0];
-      *(cp + 3) = c_22_c_32.d[1];
+      *cp += c_02_c_12.d[0];
+      *(cp + 1) += c_02_c_12.d[1];
+      *(cp + 2) += c_22_c_32.d[0];
+      *(cp + 3) += c_22_c_32.d[1];
 
       cp += lda;
-      *cp = c_03_c_13.d[0];
-      *(cp + 1) = c_03_c_13.d[1];
-      *(cp + 2) = c_23_c_33.d[0];
-      *(cp + 3) = c_23_c_33.d[1];
+      *cp += c_03_c_13.d[0];
+      *(cp + 1) += c_03_c_13.d[1];
+      *(cp + 2) += c_23_c_33.d[0];
+      *(cp + 3) += c_23_c_33.d[1];
     }
   }
 }
