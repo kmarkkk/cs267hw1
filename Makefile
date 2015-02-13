@@ -2,8 +2,9 @@
 # This makefile is intended for the GNU C compiler. On Hopper, the Portland compilers are default, so you must instruct the Cray compiler wrappers to switch to GNU: type "module swap PrgEnv-pgi PrgEnv-gnu"
 
 CC = cc 
-OPT = -O1
-CFLAGS = -Wall -std=gnu99 $(OPT)
+OPT = -O3
+#CFLAGS = -Wall -std=gnu99 $(OPT)
+CFLAGS = -Wall -fstrict-aliasing -std=c99 -std=gnu99 $(OPT)
 LDFLAGS = -Wall
 # librt is needed for clock_gettime
 LDLIBS = -lrt
