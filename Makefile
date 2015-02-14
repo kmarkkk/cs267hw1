@@ -4,7 +4,7 @@
 CC = cc 
 OPT = -O3
 #CFLAGS = -Wall -std=gnu99 $(OPT)
-CFLAGS = -Wall -fstrict-aliasing -std=c99 -std=gnu99 $(OPT)
+CFLAGS = -Wall -fstrict-aliasing -std=c99 -std=gnu99 $(OPT) -march=core2 -ftree-vectorize -funroll-loops -ffast-math
 LDFLAGS = -Wall
 # librt is needed for clock_gettime
 LDLIBS = -lrt
