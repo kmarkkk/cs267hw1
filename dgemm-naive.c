@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <emmintrin.h>
 
-const char* dgemm_desc = "Naive, three-loop dgemm.";
+const char* dgemm_desc = "Matrix multiplication for team 40";
 /* k, j, i */
 #define BLOCK_SIZE1 256
 #define BLOCK_SIZE2 256
